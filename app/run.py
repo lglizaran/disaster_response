@@ -14,9 +14,9 @@ nltk.download('wordnet')
 from flask import Flask
 from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
-from sklearn.externals import joblib
+import joblib
 from sqlalchemy import create_engine
-
+from sklearn.base import BaseEstimator, TransformerMixin
 
 app = Flask(__name__)
 
@@ -36,13 +36,25 @@ def tokenize(text):
 
     return tokens
 
+class PunctPercExtractor(BaseEstimator, TransformerMixin):
+
+    def punct(self, text):
+        punct = len(re.findall(r"[^a-zA-Z0-9]", text)) / len(text)
+        return punct
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X_punct = pd.Series(X).apply(self.punct)
+        return pd.DataFrame(X_punct)
+
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
-df = pd.read_sql_table('DisasterResponse.', engine)
+df = pd.read_sql_table('DisasterResponse', engine)
 
 # load model
 model = joblib.load("../models/classifier.pkl")
-
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -51,10 +63,8 @@ def index():
 
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
-    print(genre_counts)
-    print(genre_names)
+    genre_counts = df.groupby('genre').count()['message'].values
+    genre_names = df.groupby('genre').count()['message'].index.values
 
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -86,7 +96,6 @@ def index():
     # render web page with plotly graphs
     return render_template('master.html', ids=ids, graphJSON=graphJSON)
 
-
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
@@ -104,10 +113,8 @@ def go():
         classification_result=classification_results
     )
 
-
 def main():
     app.run(debug=True)
-
 
 if __name__ == '__main__':
     main()
