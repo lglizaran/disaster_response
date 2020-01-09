@@ -1,5 +1,10 @@
 # disaster_response
 
+### Summary:
+This project is a ML Classifier that creates labels for messages of natural disasters in order to make easier and more effective the response.
+
+It includes the pre-trained model and the output is shown in a web app in which the user can input a message and see the response.
+
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
